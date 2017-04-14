@@ -218,7 +218,7 @@ fbo_t CreateFBO(int width, int height) {
 	//swap_desc.ArraySize = 1;
 	//swap_desc.Format = OVR_FORMAT_R8G8B8A8_UNORM_SRGB;
 	//swap_desc.Width = width;
-	//swap_desc.Height = height;
+	//swap_desc.Height = height;orientation
 	//swap_desc.MipLevels = 1;
 	//swap_desc.SampleCount = 1;
 	//swap_desc.StaticImage = ovrFalse;
@@ -253,7 +253,7 @@ void DeleteFBO(fbo_t fbo) {
 	//ovr_DestroyTextureSwapChain(session, fbo.swap_chain);
 }
 
-void QuatToYawPitchRoll(ovrQuatf q, vec3_t out) {
+void QuatToYawPitchRoll(Vector4 q, vec3_t out) {
 	float sqw = q.w*q.w;
 	float sqx = q.x*q.x;
 	float sqy = q.y*q.y;
@@ -281,27 +281,61 @@ void QuatToYawPitchRoll(ovrQuatf q, vec3_t out) {
 
 void GetRotation(vec3_t out) {
 	
-
+	//Original Attempt
+	
 		if (m_mat4HMDPose.m[0] == 1.0f)
 		{
-			out[YAW] = atan2f(m_mat4HMDPose.m[2], m_mat4HMDPose.m[11]);
-			out[PITCH] = 0;
+			out[YAW] = atan2f(m_mat4HMDPose.m[2], m_mat4HMDPose.m[11]) / M_PI_DIV_180;
 			out[ROLL] = 0;
-
+			out[PITCH] = 0;
 		}
 		else if (m_mat4HMDPose.m[0] == -1.0f)
 		{
-			out[YAW] = atan2f(m_mat4HMDPose.m[2], m_mat4HMDPose.m[11]);
-			out[PITCH] = 0;
+			out[YAW] = atan2f(m_mat4HMDPose.m[2], m_mat4HMDPose.m[11]) / M_PI_DIV_180;
 			out[ROLL] = 0;
+			out[PITCH] = 0;
 		}
 		else
 		{
 
-			out[YAW] = atan2(-m_mat4HMDPose.m[8], m_mat4HMDPose.m[0]);
-			out[PITCH] = asin(m_mat4HMDPose.m[4]);
-			out[ROLL] = atan2(-m_mat4HMDPose.m[6], m_mat4HMDPose.m[5]);
+			out[YAW] = atan2(-m_mat4HMDPose.m[8], m_mat4HMDPose.m[0]) / M_PI_DIV_180;
+			out[ROLL] = -asin(m_mat4HMDPose.m[4]) / M_PI_DIV_180;
+			out[PITCH] = -atan2(-m_mat4HMDPose.m[6], m_mat4HMDPose.m[5]) / M_PI_DIV_180;
 		}
+	
+	//	out[YAW] = 0;
+	//		out[ROLL] = 0;
+	//		out[PITCH] = 0;
+	//Second Attempt
+
+	//float mag = sqrt(m_mat4HMDPose.m[9] * m_mat4HMDPose.m[9] + m_mat4HMDPose.m[10] * m_mat4HMDPose.m[10]) / M_PI_DIV_180;
+	//bool singular = mag < 1e-6;
+	//if (!singular)
+	//{
+	//out[PITCH] = atan2(m_mat4HMDPose.m[9], m_mat4HMDPose.m[10]) / M_PI_DIV_180;
+	//out[YAW] = atan2(-m_mat4HMDPose.m[8], mag) / M_PI_DIV_180;
+	//out[ROLL] = atan2(m_mat4HMDPose.m[4], m_mat4HMDPose.m[0]) / M_PI_DIV_180;
+	//}
+	//else
+	//{
+	//	out[PITCH] = atan2(-m_mat4HMDPose.m[6], m_mat4HMDPose.m[5]) / M_PI_DIV_180;
+	//	out[YAW] = atan2(-m_mat4HMDPose.m[8], mag) / M_PI_DIV_180;
+	//	out[ROLL] = 0;
+	//}
+
+
+	//FINE! I'll convert to quaternions first!
+	/*	Vector4 quat;
+		quat.w = sqrt(1.0f + m_mat4HMDPose.m[0] + m_mat4HMDPose.m[5] + m_mat4HMDPose.m[10]) / 2.0;
+		float w4 = (4.0f * quat.w);
+		quat.x = (m_mat4HMDPose.m[9] - m_mat4HMDPose.m[6]) / w4;
+		quat.y = (m_mat4HMDPose.m[3] - m_mat4HMDPose.m[8]) / w4;
+		quat.z = (m_mat4HMDPose.m[4] - m_mat4HMDPose.m[2]) / w4;
+
+
+		QuatToYawPitchRoll(quat, out);
+*/
+
 
 }
 
@@ -480,9 +514,9 @@ qboolean VR_Enable()
 
 		eyes[i].index = i;
 		eyes[i].fbo = CreateFBO((int)m_nRenderWidth, (int)m_nRenderHeight);
-		eyes[i].HmdToEyeOffset.x = matEye.m[0][3];
-		eyes[i].HmdToEyeOffset.y = matEye.m[1][3];
-		eyes[i].HmdToEyeOffset.z = matEye.m[2][3];
+		eyes[i].HmdToEyeOffset.x = 0; //matEye.m[0][3];
+		eyes[i].HmdToEyeOffset.y = 0; //matEye.m[1][3];
+		eyes[i].HmdToEyeOffset.z = 0;// matEye.m[2][3];
 		leftTan *= -1.0f;
 		upTan *= -1.0f;
 		eyes[i].fov_x = (atan(leftTan) + atan(rightTan)) / M_PI_DIV_180;
@@ -622,9 +656,11 @@ void VR_UpdateScreenContent()
 	//Update Vive pose
 	UpdateHMDMatrixPose();
 
+	//Get camera poses
+	SetupCameras();
 
 	// Calculate HMD angles and blend with input angles based on current aim mode
-	GetRotation(orientation);
+	GetRotation(&orientation);
 
 	switch( (int)vr_aimmode.value )
 	{
@@ -687,6 +723,7 @@ void VR_UpdateScreenContent()
 	
 	VectorCopy (cl.viewangles, r_refdef.viewangles);
 	VectorCopy (cl.aimangles, r_refdef.aimangles);
+	//VR_SetAngles(&orientation);
 
 
 	// Calculate eye poses
@@ -699,8 +736,6 @@ void VR_UpdateScreenContent()
 	view_offset[1].z = eyes[1].HmdToEyeOffset.z;
 
 
-	//Get camera poses
-	SetupCameras();
 	//ovr_CalcEyePoses(hmdState.HeadPose.ThePose, view_offset, render_pose);
 	eyes[0].pose = Matrix4_multiply_Matrix4(&m_mat4eyePosLeft, &m_mat4HMDPose);
 	eyes[0].proj = m_mat4ProjectionLeft;
@@ -775,13 +810,24 @@ void VR_SetMatrices() {
 	Matrix4 projection;
 
 	// Calculat HMD projection matrix and view offset position
-	//projection = current_eye->proj;// TransposeMatrix(ovrMatrix4f_Projection(hmd.DefaultEyeFov[current_eye->index], 4, gl_farclip.value, ovrProjection_None));
-	projection = Matrix4_multiply_Matrix4(&current_eye->proj, &current_eye->pose);
+	projection = current_eye->proj;// TransposeMatrix(ovrMatrix4f_Projection(hmd.DefaultEyeFov[current_eye->index], 4, gl_farclip.value, ovrProjection_None));
+/*	if (current_eye->index == 0) {
+	projection = GetCurrentViewProjectionMatrix(EVREye_Eye_Left);
+}
+else {
+	projection = GetCurrentViewProjectionMatrix(EVREye_Eye_Right);
+}
+
+    projection.m[0] = tempProj.m[0];   projection.m[1] = tempProj.m[4];   projection.m[2] = tempProj.m[8];   projection.m[3] = tempProj.m[12];
+    projection.m[4] = tempProj.m[1];   projection.m[5] = tempProj.m[5];   projection.m[6] = tempProj.m[9];   projection.m[7] = tempProj.m[13];
+    projection.m[8] = tempProj.m[2];   projection.m[9] = tempProj.m[6];   projection.m[10]= tempProj.m[10];  projection.m[11]= tempProj.m[14];
+    projection.m[12]= tempProj.m[3];   projection.m[13]= tempProj.m[7];   projection.m[14]= tempProj.m[11];  projection.m[15]= tempProj.m[15];
+	*/
 	// We need to scale the view offset position to quake units and rotate it by the current input angles (viewangle - eye orientation)
 	GetRotation(orientation);
-	temp[0] = -current_eye->pose.m[14] * meters_to_units;
-	temp[1] = -current_eye->pose.m[12] * meters_to_units;
-	temp[2] = current_eye->pose.m[13] * meters_to_units;
+	temp[0] = 0;// -current_eye->pose.m[14] * meters_to_units;
+	temp[1] = 0;// -current_eye->pose.m[12] * meters_to_units;
+	temp[2] = 0;// current_eye->pose.m[13] * meters_to_units;
 	Vec3RotateZ(temp, (r_refdef.viewangles[YAW]-orientation[YAW])*M_PI_DIV_180, position);
 
 
@@ -792,12 +838,40 @@ void VR_SetMatrices() {
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity ();
 	
-	glRotatef (-90,  1, 0, 0); // put Z going up
-	glRotatef (90,  0, 0, 1); // put Z going up
-		
-	glRotatef (-r_refdef.viewangles[PITCH],  0, 1, 0);
-	glRotatef (-r_refdef.viewangles[ROLL],  1, 0, 0);
-	glRotatef (-r_refdef.viewangles[YAW],  0, 0, 1);
+	
+	
+	if (0) {
+		Matrix4 tm;
+
+		//Transpose matrix
+		tm.m[0] = m_mat4HMDPose.m[0];   tm.m[1] = m_mat4HMDPose.m[4];   tm.m[2] = m_mat4HMDPose.m[8];   tm.m[3] = m_mat4HMDPose.m[12];
+		tm.m[4] = m_mat4HMDPose.m[1];   tm.m[5] = m_mat4HMDPose.m[5];   tm.m[6] = m_mat4HMDPose.m[9];   tm.m[7] = m_mat4HMDPose.m[13];
+		tm.m[8] = m_mat4HMDPose.m[2];   tm.m[9] = m_mat4HMDPose.m[6];   tm.m[10]= m_mat4HMDPose.m[10];  tm.m[11]= m_mat4HMDPose.m[14];
+		tm.m[12]= m_mat4HMDPose.m[3];   tm.m[13]= m_mat4HMDPose.m[7];   tm.m[14]= m_mat4HMDPose.m[11];  tm.m[15]= m_mat4HMDPose.m[15];
+		glMultMatrixf((GLfloat*)tm.m);
+
+	}
+	else {
+		//	m_mat4HMDPose.m[12] = 0;
+		//	m_mat4HMDPose.m[13] = 0;
+		//	m_mat4HMDPose.m[14] = 0;
+
+		glMultMatrixf((GLfloat*)m_mat4HMDPose.m);
+
+
+		glRotatef(270, 0, 0, 1); // put Z going up}
+		glRotatef(270, 1, 0, 0); // put Z going up}
+		glRotatef(-90, 0, 1, 0); // put Z going up}
+
+
+	}
+	printf("X:%f  Y:%f  Z:%f  \n", r_refdef.vieworg[0], r_refdef.vieworg[1], r_refdef.vieworg[2]);
+
+
+
+	//glRotatef (-r_refdef.viewangles[PITCH],  0, 1, 0);
+	//glRotatef (-r_refdef.viewangles[ROLL],  1, 0, 0);
+	//glRotatef (-r_refdef.viewangles[YAW],  0, 0, 1);
 	
 	glTranslatef (-r_refdef.vieworg[0] -position[0],  -r_refdef.vieworg[1]-position[1],  -r_refdef.vieworg[2]-position[2]);
 }
@@ -1084,6 +1158,8 @@ Matrix4 ConvertSteamVRMatrixToMatrix4(const HmdMatrix34_t* matPose)
 			matPose->m[0][1], matPose->m[1][1], matPose->m[2][1], 0.0,
 			matPose->m[0][2], matPose->m[1][2], matPose->m[2][2], 0.0,
 			matPose->m[0][3], matPose->m[1][3], matPose->m[2][3], 1.0f
+
+
 		}
 	};
 	return mx;
@@ -1095,18 +1171,19 @@ Matrix4 ConvertSteamVRMatrixToMatrix4(const HmdMatrix34_t* matPose)
 //-----------------------------------------------------------------------------
 Matrix4 GetCurrentViewProjectionMatrix(Hmd_Eye nEye)
 {
-	Matrix4 matMVP, matProjEyePos;
+	Matrix4  matProjEyePos;
 	if (nEye == EVREye_Eye_Left)
 	{
-		matProjEyePos = Matrix4_multiply_Matrix4(&m_mat4ProjectionLeft, &m_mat4eyePosLeft);
+		matProjEyePos = Matrix4_multiply_Matrix4(&m_mat4ProjectionLeft,&m_mat4eyePosLeft);
+		return m_mat4ProjectionLeft;
 	}
 	else if (nEye == EVREye_Eye_Right)
 	{
-		matProjEyePos = Matrix4_multiply_Matrix4(&m_mat4ProjectionRight, &m_mat4eyePosRight);
+		matProjEyePos = Matrix4_multiply_Matrix4(&m_mat4ProjectionRight,&m_mat4eyePosRight);
+		return m_mat4ProjectionRight;
 	}
-	matMVP = Matrix4_multiply_Matrix4(&matProjEyePos, &m_mat4HMDPose);
+	//return Matrix4_multiply_Matrix4(&matProjEyePos, &m_mat4HMDPose);
 
-	return matMVP;
 }
 
 

@@ -105,7 +105,7 @@
       <AdditionalLibraryDirectories>..\codecs\x86;..\SDL2\lib;..\..\..\openvr\lib\win32;..\..\..\OculusSDK\LibOVR\Lib\Windows\Win32\Release\VS2015;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>msvcrt.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
       <PerUserRedirection>true</PerUserRedirection>
     </Link>
