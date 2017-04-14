@@ -345,16 +345,6 @@ void Vec3RotateZ(vec3_t in, float angle, vec3_t out) {
 	out[2] = in[2];
 }
 
-ovrMatrix4f TransposeMatrix(ovrMatrix4f in) {
-	ovrMatrix4f out;
-	int y, x;
-	for( y = 0; y < 4; y++ )
-		for( x = 0; x < 4; x++ )
-			out.M[x][y] = in.M[y][x];
-
-	return out;
-}
-
 
 // ----------------------------------------------------------------------------
 // Callbacks for cvars
@@ -839,21 +829,10 @@ else {
 	glLoadIdentity ();
 	
 	
-	
-	if (0) {
-		Matrix4 tm;
 
-		//Transpose matrix
-		tm.m[0] = m_mat4HMDPose.m[0];   tm.m[1] = m_mat4HMDPose.m[4];   tm.m[2] = m_mat4HMDPose.m[8];   tm.m[3] = m_mat4HMDPose.m[12];
-		tm.m[4] = m_mat4HMDPose.m[1];   tm.m[5] = m_mat4HMDPose.m[5];   tm.m[6] = m_mat4HMDPose.m[9];   tm.m[7] = m_mat4HMDPose.m[13];
-		tm.m[8] = m_mat4HMDPose.m[2];   tm.m[9] = m_mat4HMDPose.m[6];   tm.m[10]= m_mat4HMDPose.m[10];  tm.m[11]= m_mat4HMDPose.m[14];
-		tm.m[12]= m_mat4HMDPose.m[3];   tm.m[13]= m_mat4HMDPose.m[7];   tm.m[14]= m_mat4HMDPose.m[11];  tm.m[15]= m_mat4HMDPose.m[15];
-		glMultMatrixf((GLfloat*)tm.m);
-
-	}
-	else {
-		//	m_mat4HMDPose.m[12] = 0;
-		//	m_mat4HMDPose.m[13] = 0;
+//	position[0] = m_mat4HMDPose.m[12] * meters_to_units;
+//	position[1] = m_mat4HMDPose.m[13] * meters_to_units;
+//	position[2] = m_mat4HMDPose.m[14] * meters_to_units;
 		//	m_mat4HMDPose.m[14] = 0;
 
 		glMultMatrixf((GLfloat*)m_mat4HMDPose.m);
@@ -864,8 +843,8 @@ else {
 		glRotatef(-90, 0, 1, 0); // put Z going up}
 
 
-	}
-	printf("X:%f  Y:%f  Z:%f  \n", r_refdef.vieworg[0], r_refdef.vieworg[1], r_refdef.vieworg[2]);
+	
+	printf("ViewOrig X:%f  Y:%f  Z:%f       HMD\n X:%f  Y:%f  Z:%f ", r_refdef.vieworg[0], r_refdef.vieworg[1], r_refdef.vieworg[2], position[0], position[1], position[2]);
 
 
 
@@ -873,7 +852,7 @@ else {
 	//glRotatef (-r_refdef.viewangles[ROLL],  1, 0, 0);
 	//glRotatef (-r_refdef.viewangles[YAW],  0, 0, 1);
 	
-	glTranslatef (-r_refdef.vieworg[0] -position[0],  -r_refdef.vieworg[1]-position[1],  -r_refdef.vieworg[2]-position[2]);
+	glTranslatef (-r_refdef.vieworg[0] -position[0],  -r_refdef.vieworg[1]-position[2],  -r_refdef.vieworg[2]+position[1]);
 }
 
 void VR_AddOrientationToViewAngles(vec3_t angles)

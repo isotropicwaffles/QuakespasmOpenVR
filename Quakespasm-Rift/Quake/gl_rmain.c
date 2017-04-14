@@ -73,7 +73,7 @@ cvar_t	r_novis = {"r_novis","0",CVAR_ARCHIVE};
 
 cvar_t	gl_finish = {"gl_finish","0",CVAR_NONE};
 cvar_t	gl_clear = {"gl_clear","1",CVAR_NONE};
-cvar_t	gl_cull = {"gl_cull","1",CVAR_NONE};
+cvar_t	gl_cull = {"gl_cull","1",CVAR_NONE};//VR CHANGE TO RENDER THE WHOLE SCENE ALL THE TIME
 cvar_t	gl_smoothmodels = {"gl_smoothmodels","1",CVAR_NONE};
 cvar_t	gl_affinemodels = {"gl_affinemodels","0",CVAR_NONE};
 cvar_t	gl_polyblend = {"gl_polyblend","1",CVAR_NONE};
@@ -595,7 +595,7 @@ void R_SetupView (void)
 
 	R_MarkSurfaces (); //johnfitz -- create texture chains from PVS
 
-	R_CullSurfaces (); //johnfitz -- do after R_SetFrustum and R_MarkSurfaces
+	//R_CullSurfaces (); //johnfitz -- do after R_SetFrustum and R_MarkSurfaces
 
 	R_UpdateWarpTextures (); //johnfitz -- do this before R_Clear
 
