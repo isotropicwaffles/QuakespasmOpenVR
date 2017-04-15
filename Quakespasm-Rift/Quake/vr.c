@@ -303,40 +303,6 @@ void GetRotation(vec3_t out) {
 			out[PITCH] = -atan2(-m_mat4HMDPose.m[6], m_mat4HMDPose.m[5]) / M_PI_DIV_180;
 		}
 	
-	//	out[YAW] = 0;
-	//		out[ROLL] = 0;
-	//		out[PITCH] = 0;
-	//Second Attempt
-
-	//float mag = sqrt(m_mat4HMDPose.m[9] * m_mat4HMDPose.m[9] + m_mat4HMDPose.m[10] * m_mat4HMDPose.m[10]) / M_PI_DIV_180;
-	//bool singular = mag < 1e-6;
-	//if (!singular)
-	//{
-	//out[PITCH] = atan2(m_mat4HMDPose.m[9], m_mat4HMDPose.m[10]) / M_PI_DIV_180;
-	//out[YAW] = atan2(-m_mat4HMDPose.m[8], mag) / M_PI_DIV_180;
-	//out[ROLL] = atan2(m_mat4HMDPose.m[4], m_mat4HMDPose.m[0]) / M_PI_DIV_180;
-	//}
-	//else
-	//{
-	//	out[PITCH] = atan2(-m_mat4HMDPose.m[6], m_mat4HMDPose.m[5]) / M_PI_DIV_180;
-	//	out[YAW] = atan2(-m_mat4HMDPose.m[8], mag) / M_PI_DIV_180;
-	//	out[ROLL] = 0;
-	//}
-
-
-	//FINE! I'll convert to quaternions first!
-	/*	Vector4 quat;
-		quat.w = sqrt(1.0f + m_mat4HMDPose.m[0] + m_mat4HMDPose.m[5] + m_mat4HMDPose.m[10]) / 2.0;
-		float w4 = (4.0f * quat.w);
-		quat.x = (m_mat4HMDPose.m[9] - m_mat4HMDPose.m[6]) / w4;
-		quat.y = (m_mat4HMDPose.m[3] - m_mat4HMDPose.m[8]) / w4;
-		quat.z = (m_mat4HMDPose.m[4] - m_mat4HMDPose.m[2]) / w4;
-
-
-		QuatToYawPitchRoll(quat, out);
-*/
-
-
 }
 
 void Vec3RotateZ(vec3_t in, float angle, vec3_t out) {
@@ -635,9 +601,9 @@ void VR_UpdateScreenContent()
 		return;
 	}
 
+
 	w = mirror_texture_desc.Width;
 	h = mirror_texture_desc.Height;
-
 	// Get current orientation of the HMD
 	//ftiming = ovr_GetPredictedDisplayTime(session, 0);
 	//pose_time = ovr_GetTimeInSeconds();
@@ -652,7 +618,9 @@ void VR_UpdateScreenContent()
 	// Calculate HMD angles and blend with input angles based on current aim mode
 	GetRotation(&orientation);
 
-	switch( (int)vr_aimmode.value )
+//	switch ((int)vr_aimmode.value)
+
+	switch(7)
 	{
 		// 1: (Default) Head Aiming; View YAW is mouse+head, PITCH is head
 		default:
@@ -704,6 +672,16 @@ void VR_UpdateScreenContent()
 				}
 				cl.viewangles[PITCH]  = orientation[PITCH];
 			}
+			break;
+		case 7:
+				//cl.aimangles[YAW] = orientation[YAW];
+				//cl.aimangles[PITCH] = orientation[PITCH];
+				//cl.aimangles[ROLL] = orientation[ROLL];
+
+				cl.viewangles[YAW] = orientation[YAW];
+				cl.viewangles[PITCH] = orientation[PITCH];
+				cl.viewangles[ROLL] = orientation[ROLL];
+				
 			break;
 	}
 	cl.viewangles[ROLL]  = orientation[ROLL];
@@ -770,20 +748,20 @@ void VR_UpdateScreenContent()
 	Texture_t RightEyeTexture = { (void*) eyes[1].fbo.m_nResolveTextureId, ETextureType_TextureType_OpenGL, EColorSpace_ColorSpace_Gamma };
 	m_pCompositor->Submit(EVREye_Eye_Left, &LeftEyeTexture, NULL, EVRSubmitFlags_Submit_Default);
 	m_pCompositor->Submit(EVREye_Eye_Right, &RightEyeTexture, NULL, EVRSubmitFlags_Submit_Default);
-	glFinish();
+	
+
+	// Blit mirror texture to backbuffer
+	glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, eyes[1].fbo.framebuffer);
+	glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, 0);
+	glBlitFramebufferEXT(0, 0, m_nRenderWidth, m_nRenderHeight, 0,0, w, h, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, 0);
 
 
-	SDL_GL_SwapWindow(m_pCompositor);
+	//SDL_GL_SwapWindow(m_pCompositor);
 
 
 	glFlush();
 	glFinish();
-
-	// Blit mirror texture to backbuffer
-	glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, mirror_fbo);
-	glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, 0);
-	glBlitFramebufferEXT(0, h, w, 0, 0, 0, w, h,GL_COLOR_BUFFER_BIT, GL_NEAREST);
-	glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, 0);
 
 
 	// OVR steals the mouse focus when fading in our window. As a stupid workaround, we simply
@@ -839,7 +817,7 @@ else {
 
 
 		glRotatef(270, 0, 0, 1); // put Z going up}
-		glRotatef(270, 1, 0, 0); // put Z going up}
+		glRotatef(180, 1, 0, 0); // put Z going up}
 		glRotatef(-90, 0, 1, 0); // put Z going up}
 
 
@@ -1115,6 +1093,9 @@ void UpdateHMDMatrixPose()
 				}
 			}
 			m_strPoseClasses += m_rDevClassChar[nDevice];
+
+
+
 		}
 	}
 
@@ -1123,6 +1104,9 @@ void UpdateHMDMatrixPose()
 		Matrix4_invert(&m_rmat4DevicePose[k_unTrackedDeviceIndex_Hmd]);
 		m_mat4HMDPose = m_rmat4DevicePose[k_unTrackedDeviceIndex_Hmd];
 	}
+
+
+
 }
 
 
